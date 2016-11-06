@@ -394,7 +394,7 @@ class TccState(object):
         self.ctx = self.tcc.lib.tcc_new()
         self.tcc.states.append(self.ctx)
         self._set_tcc_path(libpath)
-        #self.tcc.lib.tcc_set_error_func(self.ctx, 0, self._error())
+        self.tcc.lib.tcc_set_error_func(self.ctx, 0, self._error())
         self.output = 0
         self.tcc_path = libpath
         self.options = []
