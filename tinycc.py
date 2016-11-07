@@ -346,6 +346,9 @@ class InlineGenerator(object):
         return wrap
 
     def callable_function(self, restype, *argtypes):
+        """
+        Decorator to make a Python function callable from C.
+        """
         def wrap(f):
             f._c_code = ''
             cargs_c = ', '.join('%s' % TYPE_MAPPER[ctype] for ctype in argtypes)
@@ -377,11 +380,6 @@ class InlineGenerator(object):
             f._proto = proto
             return f
         return wrap
-
-    #def register_pythonsymbol(self, name, value):
-    #    """
-    #    Add a symbol to the symbol table and init it lazy.
-    #    """
 
 
 class TccState(object):
@@ -482,7 +480,7 @@ class TccState(object):
 
         Use this with caution as it is likely to fail on some
         architectures (ARM at least).
-000
+
         To avoid problems during compilation with imported
         Python symbols better use the `set_symbol` method.
         """
