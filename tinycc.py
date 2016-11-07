@@ -56,7 +56,7 @@ TYPE_MAPPER = {
     ctypes.c_ushort: 'unsigned short',
     ctypes.c_double: 'double',
     ctypes.c_float: 'float',
-    ctypes.c_longdouble: 'long double',
+    #ctypes.c_longdouble: 'long double', # long double not working in PyPy
     ctypes.c_bool: '_Bool',
     ctypes.c_byte: 'char',
     ctypes.c_ubyte: 'unsigned char',

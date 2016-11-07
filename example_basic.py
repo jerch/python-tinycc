@@ -67,7 +67,8 @@ class Test(Structure):
 
     @bytes.setter
     def bytes(self, bytes):
-        self._saved_ref = (c_char * len(bytes)).from_buffer(bytes)
+        self._saved_ref = (c_ubyte * len(bytes))()
+        self._saved_ref[:] = bytes
         self._bytes = cast(self._saved_ref, c_void_p)
         self.length = len(bytes)
 
