@@ -73,8 +73,9 @@ TYPE_MAPPER.update({
     ctypes.c_void_p: 'void *'
 })
 
-TCCPATH = os.path.abspath('./linux/lib/tcc')
-TCCLIB = os.path.abspath('./linux/lib/libtcc.so')
+MODULEDIR = os.path.dirname(__file__)
+TCCPATH = os.path.join(MODULEDIR, './linux/lib/tcc')
+TCCLIB = os.path.join(MODULEDIR, './linux/lib/libtcc.so')
 OUTPUT_TYPES = {
     'memory': 1,
     'exe'   : 2,
@@ -84,8 +85,8 @@ OUTPUT_TYPES = {
 WINDOWS = False
 if sys.platform == 'win32':
     WINDOWS = True
-    TCCPATH = os.path.abspath('win32')
-    TCCLIB = os.path.abspath('win32\libtcc.dll')
+    TCCPATH = os.path.join(MODULEDIR, 'win32')
+    TCCLIB = os.path.join(MODULEDIR, 'win32\libtcc.dll')
 
 
 # tcc error function type
@@ -411,6 +412,8 @@ class TccState(object):
 
     def _error(self):
         def cb(_, msg):
+            # TODO: better error msg handling
+            print 'tcc:', msg
             self.error_message = msg
         self._error_function = ERROR_FUNC(cb)
         return self._error_function
@@ -614,13 +617,7 @@ class TccStateRun(TccState):
         argc = len(arguments)
         argv = (ctypes.POINTER(ctypes.c_char) * argc)()
         argv[:] = [ctypes.create_string_buffer(s) for s in arguments]
-        result = self.tcc.lib.tcc_run(self.ctx, argc, argv)
-        if self.error_message:
-            msg = self.error_message
-            self.error_message = ''
-            raise TccException('\nrun error\n' + msg)
-        self._run = True
-        return result
+        return self.tcc.lib.tcc_run(self.ctx, argc, argv)
 
 
 class TinyCC(object):

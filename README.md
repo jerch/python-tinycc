@@ -1,7 +1,14 @@
 # python-tinycc
 
-Module to use the Tiny C Compiler for inline C in Python.
-Tested with Ubuntu 14 (x86_64), WinXP (x86) and Raspbian (Raspberry Pi 3, ARMv7).
+Module to use the Tiny C Compiler for inlining C Code in Python.
+
+Tested with:
+
+* CPython 2.7.6 and PyPy 2.2.1 Linux (both 64bit on x86_64, Ubuntu 14)
+* CPython 2.7.5 Windows (32bit on x86, Windows XP)
+* CPython 2.7.8 Windows (32bit on x86_64, Windows 10)
+* CPython 2.7.9 and PyPy 4.0.1 Linux (both 32bit on ARMv7 emulated, Raspberry Pi 3, Raspbian Jessie armhf)
+* CPython 2.7.3 Linux (32bit ARMv7, Wandboard, Ubuntu 12 armel)
 
 
 ### Get the Tiny C Compiler
@@ -77,6 +84,7 @@ Example with inline code:
 See the example files for more usage ideas.
 
 ### TODO
+* rework error handling
 * Testing
 * Python 3 support
 * PyPI package
