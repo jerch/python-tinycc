@@ -29,6 +29,11 @@ import sys
 import ctypes
 import types
 
+PY3 = False
+if sys.version_info >= (3, 0):
+    PY3 = True
+    unicode = str
+
 # basic type mapping (array types are not supported)
 TYPE_MAPPER = {
     # stdint.h
@@ -133,7 +138,7 @@ class _ScopedStructureBase(type(ctypes.Structure)):
             TYPE_MAPPER[cls] = 'struct %s' % cls._sname_
             TYPE_MAPPER[ctypes.POINTER(cls)] = 'struct %s *' % cls._sname_
             cls._state_.parts.append(cls)
-            for k, v in dct.iteritems():
+            for k, v in dct.items():
                 if (isinstance(v, types.FunctionType) and
                         getattr(v, '_cmethod', False)):
                     v._proto(ctypes.POINTER(cls), cls._sname_)
@@ -302,10 +307,15 @@ class InlineGenerator(object):
                 if not f._c_func:
                     f._c_func = f._c_func_proto()
                 return f._c_func(*args)
-            cargs = zip(f.func_code.co_varnames, argtypes)
-            f._c_decl, f._c_code = self._create_func(f.func_name, restype,
-                                                     cargs, f.__doc__)
-            f._c_func_proto = lambda: self.state.get_symbol(f.func_name,
+            if PY3:
+                name = f.__name__
+                varnames = f.__code__.co_varnames
+            else:
+                name = f.func_name
+                varnames = f.func_code.co_varnames
+            cargs = zip(varnames, argtypes)
+            f._c_decl, f._c_code = self._create_func(name, restype, cargs, f.__doc__)
+            f._c_func_proto = lambda: self.state.get_symbol(name,
                                           ctypes.CFUNCTYPE(restype, *argtypes))
             f._c_func = None
             self.parts.append(f)
@@ -329,11 +339,16 @@ class InlineGenerator(object):
                 return f._c_func(self, *args)
 
             def proto(pointer, clsname):
+                if PY3:
+                    name = f.__name__
+                    varnames = f.__code__.co_varnames
+                else:
+                    name = f.func_name
+                    varnames = f.func_code.co_varnames
                 args = [pointer] + list(argtypes)
-                cargs = zip(f.func_code.co_varnames, args)
-                fname = clsname + '_' + f.func_name
-                decl, code = self._create_func(fname, restype,
-                                               cargs, f.__doc__)
+                cargs = zip(varnames, args)
+                fname = clsname + '_' + name
+                decl, code = self._create_func(fname, restype, cargs, f.__doc__)
                 f._c_decl = decl
                 f._c_code = code
                 self.parts.append(f)
@@ -352,9 +367,10 @@ class InlineGenerator(object):
         """
         def wrap(f):
             f._c_code = ''
+            name = f.__name__ if PY3 else f.func_name
             cargs_c = ', '.join('%s' % TYPE_MAPPER[ctype] for ctype in argtypes)
-            f._c_decl = '%s (*%s)(%s);' % (TYPE_MAPPER[restype], f.func_name, cargs_c or 'void')
-            self.symbols.append((f.func_name, ctypes.CFUNCTYPE(restype, *argtypes)(f)))
+            f._c_decl = '%s (*%s)(%s);' % (TYPE_MAPPER[restype], name, cargs_c or 'void')
+            self.symbols.append((name, ctypes.CFUNCTYPE(restype, *argtypes)(f)))
             self.parts.append(f)
             return f
         return wrap
@@ -369,8 +385,9 @@ class InlineGenerator(object):
                 return f(self.contents, *args, **kwargs)
 
             def proto(pointer, clsname):
+                name = f.__name__ if PY3 else f.func_name
                 args = tuple([pointer] + list(argtypes))
-                fname = clsname + '_' + f.func_name
+                fname = clsname + '_' + name
                 f._c_code = ''
                 cargs_c = ', '.join('%s' % TYPE_MAPPER[ctype] for ctype in args)
                 f._c_decl = '%s (*%s)(%s);' % (TYPE_MAPPER[restype], fname, cargs_c or 'void')
@@ -388,8 +405,9 @@ class TccState(object):
     Base class for compile states.
     Handles the low level stuff to work with tcc.
     """
-    def __init__(self, tcc, libpath):
+    def __init__(self, tcc, libpath, encoding):
         self.tcc = tcc
+        self.encoding = encoding
         self.ctx = self.tcc.lib.tcc_new()
         self.tcc.states.append(self.ctx)
         self._set_tcc_path(libpath)
@@ -403,8 +421,11 @@ class TccState(object):
         self.link_paths = []
         self.files = []
         self._compiled = False
-        self.error_message = ''
-        self._code = ''
+
+    def _encode(self, value):
+        if isinstance(value, unicode):
+            return value.encode(self.encoding)
+        return value
 
     def _set_output(self, output):
         self.tcc.lib.tcc_set_output_type(self.ctx, output)
@@ -413,28 +434,27 @@ class TccState(object):
     def _error(self):
         def cb(_, msg):
             # TODO: better error msg handling
-            print 'tcc:', msg
-            self.error_message = msg
+            print(msg)
         self._error_function = ERROR_FUNC(cb)
         return self._error_function
 
     def _set_tcc_path(self, path):
         self.tcc_path = path
-        self.tcc.lib.tcc_set_lib_path(self.ctx, self.tcc_path)
+        self.tcc.lib.tcc_set_lib_path(self.ctx, self._encode(self.tcc_path))
 
     def add_option(self, option):
         """
         Add a commandline option to the state.
         """
         self.options.append(option)
-        self.tcc.lib.tcc_set_options(self.ctx, option)
+        self.tcc.lib.tcc_set_options(self.ctx, self._encode(option))
 
     def define(self, symbol, value=None):
         """
         Define preprocessor `symbol` with optional `value`.
         """
         self.defines[symbol] = None
-        self.tcc.lib.tcc_define_symbol(self.ctx, symbol, value)
+        self.tcc.lib.tcc_define_symbol(self.ctx, symbol, self._encode(value))
 
     def undefine(self, symbol):
         """
@@ -443,38 +463,36 @@ class TccState(object):
         try:
             del self.defines[symbol]
         except KeyError:
-            raise TccException('define %s not set' % symbol)
-        self.tcc.lib.tcc_undefine_symbol(self.ctx, symbol)
+            raise TccException(b'define' + symbol + b'not set')
+        self.tcc.lib.tcc_undefine_symbol(self.ctx, self._encode(symbol))
 
     def add_include_path(self, path):
         """
         Add an include path (equivalent to -Ipath).
         """
         self.include_paths.append(path)
-        self.tcc.lib.tcc_add_include_path(self.ctx, path)
+        self.tcc.lib.tcc_add_include_path(self.ctx, self._encode(path))
 
     def add_library(self, name):
         """
         Add a library. `name` is the same as the argument of the '-l' option.
         """
         self.libraries.append(name)
-        self.tcc.lib.tcc_add_library(self.ctx, name)
+        self.tcc.lib.tcc_add_library(self.ctx, self._encode(name))
 
     def add_link_path(self, path):
         """
         Add a linker path (equivalent to -Lpath).
         """
         self.link_paths.append(path)
-        self.tcc.lib.tcc_add_library_path(self.ctx, path)
+        self.tcc.lib.tcc_add_library_path(self.ctx, self._encode(path))
     
     def add_file(self, path):
         """
-        TODO ...
+        Add a file ressource to the compile state.
         """
-        if self.tcc.lib.tcc_add_file(self.ctx, path) == -1:
-            msg = self.error_message
-            self.error_message = ''
-            raise TccException('\nerror adding file\n' + msg)
+        if self.tcc.lib.tcc_add_file(self.ctx, self._encode(path)) == -1:
+            raise TccException('error adding file')
 
     def _add_symbol(self, symbol, value):
         """
@@ -487,19 +505,15 @@ class TccState(object):
         To avoid problems during compilation with imported
         Python symbols better use the `set_symbol` method.
         """
-        if self.tcc.lib.tcc_add_symbol(self.ctx, symbol, value) == -1:
-            msg = self.error_message
-            self.error_message = ''
-            raise TccException('\nsymbol error\n' + msg)
+        if self.tcc.lib.tcc_add_symbol(self.ctx, self._encode(symbol), value) == -1:
+            raise TccException('error while adding symbol')
 
     def compile(self, source):
         """
         Compile the sourcecode in `source`.
         """
-        if self.tcc.lib.tcc_compile_string(self.ctx, source) == -1:
-            msg = self.error_message
-            self.error_message = ''
-            raise TccException('\ncompile error\n' + msg)
+        if self.tcc.lib.tcc_compile_string(self.ctx, self._encode(source)) == -1:
+            raise TccException('compile error')
         self._compiled = True
 
 
@@ -507,18 +521,16 @@ class TccStateFile(TccState):
     """
     Compile state for file output. Used for 'exe', 'dll' and 'obj' states.
     """
-    def __init__(self, tcc, libpath, output):
-        TccState.__init__(self, tcc, libpath)
+    def __init__(self, tcc, libpath, output, encoding='UTF-8'):
+        TccState.__init__(self, tcc, libpath, encoding)
         self._set_output(OUTPUT_TYPES[output])
 
     def write_file(self, filename):
         """
         Link and write to `filename`.
         """
-        if self.tcc.lib.tcc_output_file(self.ctx, filename) == -1:
-            msg = self.error_message
-            self.error_message = ''
-            raise TccException('\nlink/write error\n' + msg)
+        if self.tcc.lib.tcc_output_file(self.ctx, self._encode(filename)) == -1:
+            raise TccException('error while linking/writing file')
 
 
 class TccStateMemory(TccState):
@@ -527,8 +539,8 @@ class TccStateMemory(TccState):
     Use this state to compile and load c code into the current process.
     After compilation the symbols are accessible via `get_symbol`.
     """
-    def __init__(self, tcc, libpath):
-        TccState.__init__(self, tcc, libpath)
+    def __init__(self, tcc, libpath, encoding='UTF-8'):
+        TccState.__init__(self, tcc, libpath, encoding)
         self._set_output(OUTPUT_TYPES['memory'])
         self._relocated = False
 
@@ -543,9 +555,7 @@ class TccStateMemory(TccState):
         if self._relocated:
             raise TccException('already relocated')
         if self.tcc.lib.tcc_relocate(self.ctx, 1) == -1:
-            msg = self.error_message
-            self.error_message = ''
-            raise TccException('\nrelocate error\n' + msg)
+            raise TccException('relocate error')
         self._relocated = True
 
     def _get_address(self, symbol):
@@ -553,7 +563,7 @@ class TccStateMemory(TccState):
             raise TccException('need to compile/relocate first')
         if not self._relocated:
             raise TccException('need to relocate first')
-        address = self.tcc.lib.tcc_get_symbol(self.ctx, symbol)
+        address = self.tcc.lib.tcc_get_symbol(self.ctx, self._encode(symbol))
         if not address:
             raise TccException('symbol not found')
         return address
@@ -600,8 +610,8 @@ class TccStateRun(TccState):
     Compile state for direct running of the code.
     Calling `run` will enter the main function of the code.
     """
-    def __init__(self, tcc, libpath):
-        TccState.__init__(self, tcc, libpath)
+    def __init__(self, tcc, libpath, encoding='UTF-8'):
+        TccState.__init__(self, tcc, libpath, encoding)
         self._set_output(OUTPUT_TYPES['memory'])
         self._relocated = False
         self._run = False
@@ -616,7 +626,7 @@ class TccStateRun(TccState):
             raise TccException('can only run once')
         argc = len(arguments)
         argv = (ctypes.POINTER(ctypes.c_char) * argc)()
-        argv[:] = [ctypes.create_string_buffer(s) for s in arguments]
+        argv[:] = [ctypes.create_string_buffer(self._encode(s)) for s in arguments]
         return self.tcc.lib.tcc_run(self.ctx, argc, argv)
 
 
@@ -657,13 +667,14 @@ class TinyCC(object):
             cls.instance = object.__new__(cls)
         return cls.instance
 
-    def __init__(self, shared_library=TCCLIB, tccpath=TCCPATH):
+    def __init__(self, shared_library=TCCLIB, tccpath=TCCPATH, encoding='UTF-8'):
         self.lib = ctypes.CDLL(shared_library)
         self.libpath = tccpath
         self.lib.tcc_get_symbol.restype = ctypes.c_int
         self.states = []
+        self.encoding = encoding
 
-    def create_state(self, output_type='memory'):
+    def create_state(self, output_type='memory', encoding=None):
         """
         Convenient method to create a compile state.
         `output_type` supports the following values:
@@ -675,10 +686,12 @@ class TinyCC(object):
             'exe'    -  state for writing an executable
             'dll'    -  state for writing a shared library
         """
+        if not encoding:
+            encoding = self.encoding
         if output_type == 'memory':
-            state = TccStateMemory(self, self.libpath)
+            state = TccStateMemory(self, self.libpath, encoding=encoding)
         elif output_type == 'run':
-            state = TccStateRun(self, self.libpath)
+            state = TccStateRun(self, self.libpath, encoding=encoding)
         else:
-            state = TccStateFile(self, self.libpath, output_type)
+            state = TccStateFile(self, self.libpath, output_type, encoding=encoding)
         return state

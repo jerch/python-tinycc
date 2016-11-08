@@ -1,4 +1,5 @@
 # Example to show inlining with a struct.
+from __future__ import print_function
 
 from tinycc import TinyCC, InlineGenerator
 from ctypes import c_int, addressof, c_long
@@ -34,8 +35,7 @@ class Test(gen.ScopedStructure):
 
     @gen.callable_method(c_int)
     def adder_py(self):
-        print 'Test.adder_py: %d + %d = %d' % (
-            self.a, self.b, self.a+self.b)
+        print('Test.adder_py: %d + %d = %d' % (self.a, self.b, self.a+self.b))
         return self.a + self.b
 
     @gen.c_method(c_int)
@@ -57,7 +57,7 @@ def struct_as_return(a, b):
 if __name__ == '__main__':
     state = TinyCC().create_state()
 
-    print gen.code
+    print(gen.code)
 
     state.compile(gen.code)
     state.relocate()
@@ -66,12 +66,12 @@ if __name__ == '__main__':
 
     # usage
     test = Test(1, 2)
-    print 'addresses equal:', addressof(test) == test.get_address()
-    print test.add_a(10)
-    print test.adder_c()
-    print test.adder_py()
-    print test.call_methods_c()
+    print('addresses equal:', addressof(test) == test.get_address())
+    print(test.add_a(10))
+    print(test.adder_c())
+    print(test.adder_py())
+    print(test.call_methods_c())
 
     # return struct: bug in TCC 0.9.26 zip release
     test2 = struct_as_return(23, 24)
-    print test2, test2.a, test2.b
+    print(test2, test2.a, test2.b)

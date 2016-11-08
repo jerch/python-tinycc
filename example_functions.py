@@ -8,9 +8,15 @@
 #
 # NOTE: For trivial tasks the overhead of the ctype conversions
 #       will let the C code run slower than a CPython equivalent.
+from __future__ import print_function
 
 from tinycc import TinyCC, InlineGenerator
 from ctypes import c_int
+
+try:
+    range = xrange
+except NameError:
+    pass
 
 # create a generator object first
 gen = InlineGenerator()
@@ -87,14 +93,14 @@ def c_runner_l(n):
 
 def py_runner_r(n):
     sum = 0
-    for _ in xrange(n):
+    for _ in range(n):
         sum += r_fib_py(20)
     return sum
 
 
 def py_runner_l(n):
     sum = 0
-    for _ in xrange(n):
+    for _ in range(n):
         sum += l_fib_py(20)
     return sum
 
@@ -123,14 +129,14 @@ def c_runner_lc(n):
 
 def py_runner_rc(n):
     sum = 0
-    for _ in xrange(n):
+    for _ in range(n):
         sum += r_fib_c(20)
     return sum
 
 
 def py_runner_lc(n):
     sum = 0
-    for _ in xrange(n):
+    for _ in range(n):
         sum += l_fib_c(20)
     return sum
 
@@ -155,14 +161,14 @@ if __name__ == '__main__':
     from timeit import timeit
     py = timeit('r_fib_py(20)', setup='from __main__ import r_fib_py', number=100)
     c = timeit('r_fib_c(20)', setup='from __main__ import r_fib_c', number=100)
-    print 'recursive Python/C:', py, c, float(py) / c
+    print('recursive Python/C:', py, c, float(py) / c)
 
     py = timeit('l_fib_py(20)', setup='from __main__ import l_fib_py', number=100)
     c = timeit('l_fib_c(20)', setup='from __main__ import l_fib_c', number=100)
-    print 'looped Python/C:', py, c, float(py) / c
+    print('looped Python/C:', py, c, float(py) / c)
 
     # some call tests Python <--> C
-    print 'workload - sum(100x fib(20)):'
+    print('workload - sum(100x fib(20)):')
     assert(c_runner_l(100) == py_runner_l(100))
     assert(c_runner_l(100) == py_runner_r(100))
     assert(c_runner_l(100) == c_runner_rc(100))
@@ -173,19 +179,19 @@ if __name__ == '__main__':
     assert(c_runner_r(100) == c_runner_l(100))
     r = timeit('c_runner_r(100)', setup='from __main__ import c_runner_r', number=1)
     l = timeit('c_runner_l(100)', setup='from __main__ import c_runner_l', number=1)
-    print 'fib_py from C (rec/loop):', r, l, float(r) / l
+    print('fib_py from C (rec/loop):', r, l, float(r) / l)
 
     assert(py_runner_r(100) == py_runner_l(100))
     r = timeit('py_runner_r(100)', setup='from __main__ import py_runner_r', number=1)
     l = timeit('py_runner_l(100)', setup='from __main__ import py_runner_l', number=1)
-    print 'fib_py from Py (rec/loop):', r, l, float(r) / l
+    print('fib_py from Py (rec/loop):', r, l, float(r) / l)
 
     assert(c_runner_rc(100) == c_runner_lc(100))
     r = timeit('c_runner_rc(100)', setup='from __main__ import c_runner_rc', number=1)
     l = timeit('c_runner_lc(100)', setup='from __main__ import c_runner_lc', number=1)
-    print 'fib_c from C (rec/loop):', r, l, float(r) / l
+    print('fib_c from C (rec/loop):', r, l, float(r) / l)
 
     assert(py_runner_rc(100) == py_runner_lc(100))
     r = timeit('py_runner_rc(100)', setup='from __main__ import py_runner_rc', number=1)
     l = timeit('py_runner_lc(100)', setup='from __main__ import py_runner_lc', number=1)
-    print 'fib_c from Py (rec/loop):', r, l, float(r) / l
+    print('fib_c from Py (rec/loop):', r, l, float(r) / l)

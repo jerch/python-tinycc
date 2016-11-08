@@ -2,6 +2,7 @@
 # and a callback invocation.
 # NOTE: For Windows the package contains a binary version
 # of the SDL2 library. 
+from __future__ import print_function
 
 from tinycc import TinyCC
 from ctypes import CFUNCTYPE, c_int, c_void_p, CDLL
@@ -61,7 +62,7 @@ void run_sdl(int width, int height) {
 # callback called from C
 @CFUNCTYPE(None, c_int, c_int, c_int)
 def get_color(r, g, b):
-    print 'color is rgb(%d, %d, %d)' % (r, g, b)
+    print('color is rgb(%d, %d, %d)' % (r, g, b))
 
 
 if __name__ == '__main__':

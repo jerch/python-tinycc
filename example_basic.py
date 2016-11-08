@@ -3,6 +3,7 @@
 # while the second version does the same with the memory state
 # by symbol resolution with some additional access tests.
 # A third version (commented out) shows how to write an executable.
+from __future__ import print_function
 
 from tinycc import TinyCC
 from ctypes import (CFUNCTYPE, c_int, c_void_p, Structure, c_ubyte,
@@ -77,16 +78,16 @@ if __name__ == '__main__':
     tcc = TinyCC()
 
     # 1st version - simple direct run of main function
-    print 'simple "run" state:'
+    print('simple "run" state:')
     state = tcc.create_state('run')
     state.compile(C_CODE)
     result = state.run(['stuff', 'from', 'the', 'cmdline'])
-    print 'result:', result
+    print('result:', result)
 
-    print
+    print()
 
     # 2nd version - more complex run via symbols
-    print '"memory" state with symbol access:'
+    print('"memory" state with symbol access:')
     state = tcc.create_state() # defaults to 'memory'
     state.compile(C_CODE)
     state.relocate()
@@ -97,21 +98,21 @@ if __name__ == '__main__':
     value = state.get_symbol('value', c_int)
 
     # alter test.bytes
-    test.bytes = bytearray('Python was here...')
+    test.bytes = bytearray(b'Python was here...')
 
     # prepare main arguments
-    arguments = ['this', 'is', 'more', 'interactive...']
+    arguments = [b'this', b'is', b'more', b'interactive...']
     argc = len(arguments)
     argv = (POINTER(c_char) * argc)()
     argv[:] = [create_string_buffer(s) for s in arguments]
 
     # call main
     result = main(argc, argv)
-    print 'result:', result
+    print('result:', result)
 
     # read exported globals
-    print 'global "test.bytes"', repr(test.bytes)
-    print 'global "value":', repr(value)
+    print('global "test.bytes"', repr(test.bytes))
+    print('global "value":', repr(value))
 
     # 3rd version - write an executable
     #state = tcc.create_state('exe')
