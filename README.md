@@ -9,6 +9,7 @@ Tested with:
 * CPython 2.7.8 Windows (32bit on x86_64, Windows 10)
 * CPython 2.7.9 and PyPy 4.0.1 Linux (both 32bit on ARMv7 emulated, Raspberry Pi 3, Raspbian Jessie armhf)
 * CPython 2.7.3 Linux (32bit ARMv7, Wandboard, Ubuntu 12 armel)
+* CPython 3.4.3 Linux (64bit on x86_64, Ubuntu 14)
 
 
 ### Get the Tiny C Compiler
@@ -86,5 +87,4 @@ See the example files for more usage ideas.
 ### TODO
 * rework error handling
 * Testing
-* Python 3 support
 * PyPI package

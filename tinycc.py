@@ -197,29 +197,31 @@ class InlineGenerator(object):
     length argument anyways.
 
     Example:
+        >>> from tinycc import TinyCC, InlineGenerator
+        >>> from ctypes import c_int
+        >>>
         >>> gen = InlineGenerator()
         >>>
         >>> # C function to be used from Python
-        >>> @gen.c_function(ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int)
-        >>> def add_mul(a, b, c):
-        >>>    "return mul(a + b, c);" #  calls the Python function mul
-        >>>
+        ... @gen.c_function(c_int, c_int, c_int, c_int)
+        ... def add_mul(a, b, c):
+        ...     "return mul(a + b, c);" #  calls the Python function mul
+        ...
         >>> # Python function to be used from C
-        >>> @gen.callable_function(ctypes.c_int, ctypes.c_int, ctypes.c_int)
-        >>> def mul(a, b):
-        >>>     return a * b
-        >>>
+        ... @gen.callable_function(c_int, c_int, c_int)
+        ... def mul(a, b):
+        ...     return a * b
+        ...
         >>> # compile the code
-        >>> state = TinyCC().create_state()
+        ... state = TinyCC().create_state()
         >>> state.compile(gen.code)
         >>> state.relocate()
         >>>
-        >>> # bind to state to resolve symbols
-        >>> gen.bind_state(state)
+        >>> # bind to state for symbol resolution
+        ... gen.bind_state(state)
         >>>
         >>> # use it
-        >>> add_mul(23, 42, 7)
-
+        ... add_mul(23, 42, 7)
     """
     def __init__(self):
         self.parts = []
