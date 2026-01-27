@@ -11,6 +11,7 @@ import sys
 
 C_CODE = '''
 #include <stdio.h>
+#define SDL_DISABLE_IMMINTRIN_H
 #include <SDL2/SDL.h>
 
 /* callback definition */
@@ -27,7 +28,7 @@ void run_sdl(int width, int height) {
     SDL_Surface* screenSurface = NULL;
 
     if(SDL_Init(SDL_INIT_VIDEO) < 0 ) {
-        printf("SDL could not initialize! SDL_Error: %s\n", SDL_GetError());
+        printf("SDL could not initialize! SDL_Error: %s\\n", SDL_GetError());
         return;
     }
 
@@ -37,7 +38,7 @@ void run_sdl(int width, int height) {
                               width, height,
                               SDL_WINDOW_SHOWN);
     if(!window) {
-        printf("Window could not be created! SDL_Error: %s\n", SDL_GetError());
+        printf("Window could not be created! SDL_Error: %s\\n", SDL_GetError());
         return;
     }
 
@@ -75,7 +76,7 @@ if __name__ == '__main__':
     # here: take the SDL2 header and library from the
     #       SDL2-win32 folder in Windows
     if sys.platform == 'win32':
-        state.add_include_path('SDL2-win32\include')
+        state.add_include_path('SDL2-win32\\include')
         state.add_link_path('SDL2-win32')
         # load library by hand
         # this is needed for 2 reasons:

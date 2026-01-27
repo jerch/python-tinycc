@@ -91,7 +91,7 @@ WINDOWS = False
 if sys.platform == 'win32':
     WINDOWS = True
     TCCPATH = os.path.join(MODULEDIR, 'win32')
-    TCCLIB = os.path.join(MODULEDIR, 'win32\libtcc.dll')
+    TCCLIB = os.path.join(MODULEDIR, 'win32\\libtcc.dll')
 
 
 # tcc error function type
@@ -514,6 +514,7 @@ class TccState(object):
         """
         Compile the sourcecode in `source`.
         """
+        print(self._encode(source).decode('utf-8'))
         if self.tcc.lib.tcc_compile_string(self.ctx, self._encode(source)) == -1:
             raise TccException('compile error')
         self._compiled = True

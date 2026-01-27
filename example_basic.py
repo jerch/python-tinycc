@@ -32,11 +32,11 @@ int main(int argc, char **argv) {
     int i;
     char **pos = argv;
 
-    printf("Hello Python world from C!\n");
+    printf("Hello Python world from C!\\n");
 
     /* list arguments */
     for (i=0; i<argc; ++i, ++pos) {
-        printf("arg %d: %s\n", i, *pos);
+        printf("arg %d: %s\\n", i, *pos);
     }
 
     /* byte printing the hard way ;) */
@@ -47,11 +47,11 @@ int main(int argc, char **argv) {
 
 
     if (*test.bytes == 'a')
-        printf(" - not so impressive.\n");
+        printf(" - not so impressive.\\n");
     else if (*test.bytes == 's')
-        printf(" - ok.\n");
+        printf(" - ok.\\n");
     else
-        printf(" - Busted!\n");
+        printf(" - Busted!\\n");
     return 0;
 }
 '''

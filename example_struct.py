@@ -20,7 +20,7 @@ class Test(gen.ScopedStructure):
     @gen.c_method(c_int, c_int)
     def add_a(self, num):
         """
-        printf("add_a:\n");
+        printf("add_a:\\n");
         self->a += num;
         return self->a;
         """
@@ -28,7 +28,7 @@ class Test(gen.ScopedStructure):
     @gen.c_method(c_int)
     def adder_c(self):
         """
-        printf("Test.adder_c: %d + %d = %d\n",
+        printf("Test.adder_c: %d + %d = %d\\n",
                self->a, self->b, self->a + self->b);
         return self->a + self->b;
         """

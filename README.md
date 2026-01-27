@@ -43,43 +43,43 @@ make install
 ### Examples
 A simple example with the 'run' state:
 ```python
->>> from tinycc import TinyCC
->>> c_code = '#include <stdio.h>'
->>> c_code += 'void main(void) {'
->>> c_code += '    printf("Hello World!\n");'
->>> c_code += '}'
->>> state = TinyCC().create_state('run')
->>> state.compile(c_code)
->>> state.run([])
+from tinycc import TinyCC
+c_code = '#include <stdio.h>\n'
+c_code += 'void main(void) {'
+c_code += '    printf("Hello World!\\n");'
+c_code += '}'
+state = TinyCC().create_state('run')
+state.compile(c_code)
+state.run([])
 ```
 
 Example with inline code:
 ```python
->>> from tinycc import TinyCC, InlineGenerator
->>> from ctypes import c_int
->>> 
->>> gen = InlineGenerator()
->>> 
->>> # C function to be used from Python
-... @gen.c_function(c_int, c_int, c_int, c_int)
-... def add_mul(a, b, c):
-...     "return mul(a + b, c);" #  calls the Python function mul
-... 
->>> # Python function to be used from C
-... @gen.callable_function(c_int, c_int, c_int)
-... def mul(a, b):
-...     return a * b
-... 
->>> # compile the code
-... state = TinyCC().create_state()
->>> state.compile(gen.code)
->>> state.relocate()
->>> 
->>> # bind to state for symbol resolution
-... gen.bind_state(state)
->>> 
->>> # use it
-... add_mul(23, 42, 7)
+from tinycc import TinyCC, InlineGenerator
+from ctypes import c_int
+
+gen = InlineGenerator()
+
+# C function to be used from Python
+@gen.c_function(c_int, c_int, c_int, c_int)
+def add_mul(a, b, c):
+    "return mul(a + b, c);" #  calls the Python function mul
+
+# Python function to be used from C
+@gen.callable_function(c_int, c_int, c_int)
+def mul(a, b):
+    return a * b
+
+# compile the code
+state = TinyCC().create_state()
+state.compile(gen.code)
+state.relocate()
+
+# bind to state for symbol resolution
+gen.bind_state(state)
+
+# use it
+add_mul(23, 42, 7)
 455
 ```
 See the example files for more usage ideas.
