@@ -84,7 +84,7 @@ if __name__ == '__main__':
         #   and leaves the actual DLL loading to Windows
         # - SDL2.dll is not in the common search paths of Windows
         #   therefore the autoloading will fail
-        sdl = CDLL('SDL2-win32\SDL2.dll')
+        sdl = CDLL('SDL2-win32\\SDL2.dll')
     state.add_library('SDL2')
 
     state.compile(C_CODE)
